@@ -1,0 +1,41 @@
+@startuml
+abstract class Actor{
+}
+class Player extends Actor{}
+class Skeleton extends Actor{}
+
+class Cell implements Drawable{
+-CellType type;
+-Actor actor;
+-GameMap gameMap;
+-int x, y
++Cell(GameMap, int, int, CellType)
++getType()
++void setType()
++void setActor()
++getActor()
++getNeighbor()
++getTileName()
++getX()
++getY()
+
+}
+enum CellType{
+EMPTY
+FLOOR
+WALL
+-String tileName;
++CellType(String)
++getTileName()
+
+}
+interface Drawable{
+}
+class GameMap{}
+class MapLoader{}
+
+class App{}
+class Main extends App{}
+
+class Tiles{}
+@enduml
