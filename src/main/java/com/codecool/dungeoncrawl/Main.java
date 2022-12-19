@@ -1,5 +1,6 @@
 package com.codecool.dungeoncrawl;
 
+
 import com.codecool.dungeoncrawl.logic.Cell;
 import com.codecool.dungeoncrawl.logic.GameMap;
 import com.codecool.dungeoncrawl.logic.MapLoader;
@@ -8,31 +9,56 @@ import com.codecool.dungeoncrawl.logic.actors.Nazgul;
 import com.codecool.dungeoncrawl.logic.actors.Ork;
 import com.codecool.dungeoncrawl.logic.actors.Player;
 import com.codecool.dungeoncrawl.logic.items.Item;
+
+import com.codecool.dungeoncrawl.dao.GameDatabaseManager;
+import com.codecool.dungeoncrawl.logic.Cell;
+import com.codecool.dungeoncrawl.logic.GameMap;
+import com.codecool.dungeoncrawl.logic.MapLoader;
+import com.codecool.dungeoncrawl.logic.actors.Player;
+
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+
+import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
+
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 
 public class Main extends Application {
     GameMap map = MapLoader.loadMap(1);
+
+import java.sql.SQLException;
+
+public class Main extends Application {
+    GameMap map = MapLoader.loadMap();
+
     Canvas canvas = new Canvas(
             map.getWidth() * Tiles.TILE_WIDTH,
             map.getHeight() * Tiles.TILE_WIDTH);
     GraphicsContext context = canvas.getGraphicsContext2D();
     Label healthLabel = new Label();
+
     Label playerInventory = new Label("Inventory-> ");
     Button pickUpItems = new Button("Pick up");
+
+    GameDatabaseManager dbManager;
+
 
     public static void main(String[] args) {
         launch(args);
@@ -40,12 +66,16 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+
+        setupDbManager();
+
         GridPane ui = new GridPane();
         ui.setPrefWidth(200);
         ui.setPadding(new Insets(10));
 
         ui.add(new Label("Health: "), 0, 0);
         ui.add(healthLabel, 1, 0);
+
         ui.add(pickUpItems,0,2);
         pickUpItems.setOnAction(click -> {
             map.getPlayer().pickUpItem();
@@ -54,6 +84,7 @@ public class Main extends Application {
         pickUpItems.setFocusTraversable(false);
         ui.add(new Label("Inventory-> "),0,3);
         ui.add(playerInventory,0,4);
+
 
         BorderPane borderPane = new BorderPane();
 
@@ -65,20 +96,38 @@ public class Main extends Application {
         refresh();
         scene.setOnKeyPressed(this::onKeyPressed);
 
+        scene.setOnKeyReleased(this::onKeyReleased);
+
+
         primaryStage.setTitle("Dungeon Crawl");
         primaryStage.show();
     }
+
+
+    private void onKeyReleased(KeyEvent keyEvent) {
+        KeyCombination exitCombinationMac = new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN);
+        KeyCombination exitCombinationWin = new KeyCodeCombination(KeyCode.F4, KeyCombination.ALT_DOWN);
+        if (exitCombinationMac.match(keyEvent)
+                || exitCombinationWin.match(keyEvent)
+                || keyEvent.getCode() == KeyCode.ESCAPE) {
+            exit();
+        }
+    }
+
 
     private void onKeyPressed(KeyEvent keyEvent) {
         switch (keyEvent.getCode()) {
             case UP:
                 map.getPlayer().move(0, -1);
+
                 monstersMovement(map);
                 refresh();
                 break;
             case DOWN:
                 map.getPlayer().move(0, 1);
+
                 monstersMovement(map);
+
                 refresh();
                 break;
             case LEFT:
@@ -105,6 +154,17 @@ public class Main extends Application {
             }else if (monster instanceof Nazgul){
                 ((Nazgul)monster).move();
             }
+                refresh();
+                break;
+            case RIGHT:
+                map.getPlayer().move(1, 0);
+                refresh();
+                break;
+            case S:
+                Player player = map.getPlayer();
+                dbManager.savePlayer(player);
+                break;
+
         }
     }
 
@@ -116,12 +176,15 @@ public class Main extends Application {
                 Cell cell = map.getCell(x, y);
                 if (cell.getActor() != null) {
                     Tiles.drawTile(context, cell.getActor(), x, y);
+
                 } else if (cell.getItem() != null) {
                     Tiles.drawTile(context, cell.getItem(), x, y);
+
                 } else {
                     Tiles.drawTile(context, cell, x, y);
                 }
             }
+
             healthLabel.setText("" + map.getPlayer().getHealth());
             if (map.getPlayer().isDead()){
                 healthLabel.setText("DEAD");
@@ -145,5 +208,27 @@ public class Main extends Application {
         map.getPlayer().setHealth(previousHealth);
         map.getPlayer().setStr(previousAttackStrength);
         map.getPlayer().setInventory(previousInventory);
+
+        }
+        healthLabel.setText("" + map.getPlayer().getHealth());
+    }
+
+    private void setupDbManager() {
+        dbManager = new GameDatabaseManager();
+        try {
+            dbManager.setup();
+        } catch (SQLException ex) {
+            System.out.println("Cannot connect to database.");
+        }
+    }
+
+    private void exit() {
+        try {
+            stop();
+        } catch (Exception e) {
+            System.exit(1);
+        }
+        System.exit(0);
+
     }
 }
