@@ -14,16 +14,20 @@ import java.util.HashMap;
 public class Player extends Actor {
     private ArrayList<Item> inventory;
 
+    private int onMap= 1;
+
+    private boolean changeMap = false;
+
     public Player(Cell cell) {
         super(cell);
         inventory = new ArrayList<>();
         this.setHealth(15);
         this.setStr(3);
     }
+
     public boolean isDead(){
         return this.getHealth() <= 0;
     }
-
 
 
     public String getTileName() {
@@ -83,6 +87,15 @@ public class Player extends Actor {
     public void move(int dx, int dy) {
         Cell cell = getCell();
         Cell nextCell = getCell().getNeighbor(dx, dy);
+        if (nextCell.getType() == CellType.STAIRS) {
+            if (onMap == 1){
+                setOnMap(2);
+                setChangeMap(true);
+            }else {
+                setOnMap(1);
+                setChangeMap(true);
+            }
+        }
         if (nextCell.getType() == CellType.FLOOR ) {
             if (nextCell.getActor() == null) {
                 cell.setActor(null);
@@ -124,5 +137,25 @@ public class Player extends Actor {
             nextCell.setActor(this);
             cell = nextCell;
         }
+    }
+
+    public boolean getChangeMap() {
+        return changeMap;
+    }
+
+    public void setChangeMap(boolean changeMap) {
+        this.changeMap = changeMap;
+    }
+
+    public int getOnMap() {
+        return onMap;
+    }
+
+    public void setOnMap(int onMap) {
+        this.onMap = onMap;
+    }
+
+    public void setInventory(ArrayList<Item> inventory) {
+        this.inventory = inventory;
     }
 }

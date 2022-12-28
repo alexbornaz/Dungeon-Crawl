@@ -6,6 +6,8 @@ import com.codecool.dungeoncrawl.logic.MapLoader;
 import com.codecool.dungeoncrawl.logic.actors.Actor;
 import com.codecool.dungeoncrawl.logic.actors.Nazgul;
 import com.codecool.dungeoncrawl.logic.actors.Ork;
+import com.codecool.dungeoncrawl.logic.actors.Player;
+import com.codecool.dungeoncrawl.logic.items.Item;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -19,10 +21,11 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 
 public class Main extends Application {
-    GameMap map = MapLoader.loadMap();
+    GameMap map = MapLoader.loadMap(1);
     Canvas canvas = new Canvas(
             map.getWidth() * Tiles.TILE_WIDTH,
             map.getHeight() * Tiles.TILE_WIDTH);
@@ -92,6 +95,7 @@ public class Main extends Application {
         if (map.getPlayer().isDead()){
             System.exit(0);
         }
+        changeMap();
     }
 
     private void monstersMovement(GameMap map) {
@@ -124,5 +128,22 @@ public class Main extends Application {
             }
             playerInventory.setText(""+map.getPlayer().showInventory());
         }
+    }
+    public void changeMap() {
+        int previousHealth = map.getPlayer().getHealth();
+        int previousAttackStrength = map.getPlayer().getStr();
+        ArrayList<Item> previousInventory = map.getPlayer().getInventory();
+
+        if (map.getPlayer().getChangeMap() == true && map.getPlayer().getOnMap() == 1) {
+            map = MapLoader.loadMap(1);
+            map.getPlayer().setOnMap(2);
+        } else if (map.getPlayer().getChangeMap() == true && map.getPlayer().getOnMap() == 2) {
+            map = MapLoader.loadMap(2);
+            map.getPlayer().setOnMap(2);
+        }
+        map.getPlayer().setChangeMap(false);
+        map.getPlayer().setHealth(previousHealth);
+        map.getPlayer().setStr(previousAttackStrength);
+        map.getPlayer().setInventory(previousInventory);
     }
 }
