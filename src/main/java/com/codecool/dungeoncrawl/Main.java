@@ -3,6 +3,9 @@ package com.codecool.dungeoncrawl;
 import com.codecool.dungeoncrawl.logic.Cell;
 import com.codecool.dungeoncrawl.logic.GameMap;
 import com.codecool.dungeoncrawl.logic.MapLoader;
+import com.codecool.dungeoncrawl.logic.actors.Actor;
+import com.codecool.dungeoncrawl.logic.actors.Nazgul;
+import com.codecool.dungeoncrawl.logic.actors.Ork;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -15,6 +18,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+
+import java.util.ConcurrentModificationException;
 
 public class Main extends Application {
     GameMap map = MapLoader.loadMap();
@@ -79,6 +84,21 @@ public class Main extends Application {
                 map.getPlayer().move(1,0);
                 refresh();
                 break;
+        }
+        monstersMovement(map);
+    }
+
+    private void monstersMovement(GameMap map) {
+        try {
+            map.removeDeadMonsters();
+        }catch (ConcurrentModificationException e){
+        }
+        for (Actor monster: map.getMonsters()){
+            if (monster instanceof Ork){
+                ((Ork)monster).move();
+            }else if (monster instanceof Nazgul){
+                ((Nazgul)monster).move();
+            }
         }
     }
 

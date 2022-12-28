@@ -1,5 +1,7 @@
 package com.codecool.dungeoncrawl.logic;
 
+import com.codecool.dungeoncrawl.logic.actors.Nazgul;
+import com.codecool.dungeoncrawl.logic.actors.Ork;
 import com.codecool.dungeoncrawl.logic.actors.Player;
 import com.codecool.dungeoncrawl.logic.actors.Skeleton;
 import com.codecool.dungeoncrawl.logic.items.Key;
@@ -48,6 +50,16 @@ public class MapLoader {
                         case 'w':
                             cell.setType(CellType.FLOOR);
                             new Sword(cell);
+                            break;
+                        case 'o':
+                            cell.setType(CellType.FLOOR);
+                            new Ork(cell);
+                            map.addMonsterToMap(new Ork(cell));
+                            break;
+                        case 'n':
+                            cell.setType(CellType.FLOOR);
+                            new Nazgul(cell);
+                            map.addMonsterToMap(new Nazgul(cell));
                             break;
                         default:
                             throw new RuntimeException("Unrecognized character: '" + line.charAt(x) + "'");

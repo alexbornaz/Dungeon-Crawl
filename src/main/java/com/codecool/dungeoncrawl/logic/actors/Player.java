@@ -14,6 +14,8 @@ public class Player extends Actor {
     public Player(Cell cell) {
         super(cell);
         inventory = new ArrayList<>();
+        this.setHealth(15);
+        this.setStr(3);
     }
 
     public String getTileName() {
@@ -35,6 +37,9 @@ public class Player extends Actor {
     public void pickUpItem() {
         if (this.getCell().getItem() != null) {
             addToInventory(this.getCell().getItem());
+            if (this.getCell().getItem() instanceof Sword){
+                this.setStr(this.getStr()+5);
+            }
             this.getCell().setItem(null);
         }
 
