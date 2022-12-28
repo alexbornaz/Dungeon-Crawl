@@ -5,7 +5,7 @@ import com.codecool.dungeoncrawl.logic.CellType;
 import com.codecool.dungeoncrawl.logic.Drawable;
 
 public abstract class Actor implements Drawable {
-    private Cell cell;
+    protected Cell cell;
 
     private int health;
 
@@ -16,34 +16,7 @@ public abstract class Actor implements Drawable {
         this.cell.setActor(this);
     }
 
-    public void move(int dx, int dy) {
-        Cell nextCell = cell.getNeighbor(dx, dy);
-        if (nextCell.getType() == CellType.FLOOR) {
-            if (nextCell.getActor() == null){
-                cell.setActor(null);
-                nextCell.setActor(this);
-                cell = nextCell;
-            }else {
-                attack(nextCell);
-            }
-        }
-    }
 
-    public void attack(Cell nextCell) {
-        Actor monster = nextCell.getActor();
-        System.out.println(this.getStr());
-        monster.setHealth(monster.getHealth()-this.getStr());
-        if (monster.getHealth() > 0){
-            this.setHealth(this.getHealth()- monster.getStr());
-            if (this.getHealth() <= 0 ){
-                System.out.println("You died!");
-            }
-        }else {
-            cell.setActor(null);
-            nextCell.setActor(this);
-            cell = nextCell;
-        }
-    }
 
     public int getHealth() {
         return health;
@@ -76,4 +49,6 @@ public abstract class Actor implements Drawable {
     public void setCell(Cell cell) {
         this.cell = cell;
     }
+
+
 }

@@ -70,29 +70,31 @@ public class Main extends Application {
         switch (keyEvent.getCode()) {
             case UP:
                 map.getPlayer().move(0, -1);
+                monstersMovement(map);
                 refresh();
                 break;
             case DOWN:
                 map.getPlayer().move(0, 1);
+                monstersMovement(map);
                 refresh();
                 break;
             case LEFT:
                 map.getPlayer().move(-1, 0);
+                monstersMovement(map);
                 refresh();
                 break;
             case RIGHT:
                 map.getPlayer().move(1,0);
+                monstersMovement(map);
                 refresh();
                 break;
         }
-        monstersMovement(map);
+        if (map.getPlayer().isDead()){
+            System.exit(0);
+        }
     }
 
     private void monstersMovement(GameMap map) {
-        try {
-            map.removeDeadMonsters();
-        }catch (ConcurrentModificationException e){
-        }
         for (Actor monster: map.getMonsters()){
             if (monster instanceof Ork){
                 ((Ork)monster).move();
@@ -117,6 +119,9 @@ public class Main extends Application {
                 }
             }
             healthLabel.setText("" + map.getPlayer().getHealth());
+            if (map.getPlayer().isDead()){
+                healthLabel.setText("DEAD");
+            }
             playerInventory.setText(""+map.getPlayer().showInventory());
         }
     }

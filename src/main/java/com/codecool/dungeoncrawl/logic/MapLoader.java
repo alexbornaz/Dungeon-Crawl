@@ -6,6 +6,7 @@ import com.codecool.dungeoncrawl.logic.actors.Player;
 import com.codecool.dungeoncrawl.logic.actors.Skeleton;
 import com.codecool.dungeoncrawl.logic.items.Key;
 import com.codecool.dungeoncrawl.logic.items.Sword;
+import com.codecool.dungeoncrawl.logic.items.door.ClosedDoor;
 
 import java.io.InputStream;
 import java.util.Scanner;
@@ -60,6 +61,10 @@ public class MapLoader {
                             cell.setType(CellType.FLOOR);
                             new Nazgul(cell);
                             map.addMonsterToMap(new Nazgul(cell));
+                            break;
+                        case 'd':
+                            cell.setType(CellType.CLOSED_DOOR);
+                            new ClosedDoor(cell);
                             break;
                         default:
                             throw new RuntimeException("Unrecognized character: '" + line.charAt(x) + "'");
