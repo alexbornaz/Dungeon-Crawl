@@ -11,10 +11,6 @@ import com.codecool.dungeoncrawl.logic.actors.Player;
 import com.codecool.dungeoncrawl.logic.items.Item;
 
 import com.codecool.dungeoncrawl.dao.GameDatabaseManager;
-import com.codecool.dungeoncrawl.logic.Cell;
-import com.codecool.dungeoncrawl.logic.GameMap;
-import com.codecool.dungeoncrawl.logic.MapLoader;
-import com.codecool.dungeoncrawl.logic.actors.Player;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -25,7 +21,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 
-import javafx.scene.control.Label;
+
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -38,15 +34,10 @@ import javafx.stage.Stage;
 
 
 import java.util.ArrayList;
-import java.util.ConcurrentModificationException;
-
-public class Main extends Application {
-    GameMap map = MapLoader.loadMap(1);
-
 import java.sql.SQLException;
 
 public class Main extends Application {
-    GameMap map = MapLoader.loadMap();
+    GameMap map = MapLoader.loadMap(1);
 
     Canvas canvas = new Canvas(
             map.getWidth() * Tiles.TILE_WIDTH,
@@ -140,6 +131,10 @@ public class Main extends Application {
                 monstersMovement(map);
                 refresh();
                 break;
+            case S:
+                Player player = map.getPlayer();
+                dbManager.savePlayer(player);
+                break;
         }
         if (map.getPlayer().isDead()){
             System.exit(0);
@@ -156,15 +151,6 @@ public class Main extends Application {
             }
                 refresh();
                 break;
-            case RIGHT:
-                map.getPlayer().move(1, 0);
-                refresh();
-                break;
-            case S:
-                Player player = map.getPlayer();
-                dbManager.savePlayer(player);
-                break;
-
         }
     }
 
@@ -210,8 +196,6 @@ public class Main extends Application {
         map.getPlayer().setInventory(previousInventory);
 
         }
-        healthLabel.setText("" + map.getPlayer().getHealth());
-    }
 
     private void setupDbManager() {
         dbManager = new GameDatabaseManager();
