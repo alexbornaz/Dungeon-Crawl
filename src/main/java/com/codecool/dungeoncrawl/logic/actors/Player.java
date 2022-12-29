@@ -88,13 +88,7 @@ public class Player extends Actor {
         Cell cell = getCell();
         Cell nextCell = getCell().getNeighbor(dx, dy);
         if (nextCell.getType() == CellType.STAIRS) {
-            if (onMap == 1){
-                setOnMap(2);
-                setChangeMap(true);
-            }else {
-                setOnMap(1);
-                setChangeMap(true);
-            }
+            setChangeMap(true);
         }
         if (nextCell.getType() == CellType.FLOOR ) {
             if (nextCell.getActor() == null) {

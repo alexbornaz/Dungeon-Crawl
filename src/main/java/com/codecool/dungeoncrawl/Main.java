@@ -135,11 +135,11 @@ public class Main extends Application {
         ArrayList<Item> previousInventory = map.getPlayer().getInventory();
 
         if (map.getPlayer().getChangeMap() == true && map.getPlayer().getOnMap() == 1) {
-            map = MapLoader.loadMap(1);
-            map.getPlayer().setOnMap(2);
-        } else if (map.getPlayer().getChangeMap() == true && map.getPlayer().getOnMap() == 2) {
             map = MapLoader.loadMap(2);
             map.getPlayer().setOnMap(2);
+        } else if (map.getPlayer().getChangeMap() == true && map.getPlayer().getOnMap() == 2) {
+            map = MapLoader.loadMap(1);
+            map.getPlayer().setOnMap(1);
         }
         map.getPlayer().setChangeMap(false);
         map.getPlayer().setHealth(previousHealth);
