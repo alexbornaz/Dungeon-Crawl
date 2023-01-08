@@ -2,6 +2,7 @@ package com.codecool.dungeoncrawl;
 
 
 import com.codecool.dungeoncrawl.logic.Cell;
+import com.codecool.dungeoncrawl.logic.CellType;
 import com.codecool.dungeoncrawl.logic.GameMap;
 import com.codecool.dungeoncrawl.logic.MapLoader;
 import com.codecool.dungeoncrawl.logic.actors.Actor;
@@ -12,6 +13,8 @@ import com.codecool.dungeoncrawl.logic.items.Item;
 
 import com.codecool.dungeoncrawl.dao.GameDatabaseManager;
 
+import com.codecool.dungeoncrawl.logic.items.Key;
+import com.codecool.dungeoncrawl.logic.items.Sword;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -33,6 +36,7 @@ import javafx.stage.Stage;
 import java.util.ArrayList;
 import java.sql.SQLException;
 import java.util.ConcurrentModificationException;
+import java.util.HashMap;
 import java.util.Optional;
 
 public class Main extends Application {
@@ -44,6 +48,8 @@ public class Main extends Application {
             CANVAS_SIZE * Tiles.TILE_WIDTH);
     GraphicsContext context = canvas.getGraphicsContext2D();
     Label healthLabel = new Label();
+    Label strengthLabel = new Label();
+    Label mapLabel = new Label();
 
     Label playerInventory = new Label("Inventory-> ");
     Button pickUpItems = new Button("Pick up");
@@ -66,6 +72,8 @@ public class Main extends Application {
 
         ui.add(new Label("Health: "), 0, 0);
         ui.add(healthLabel, 1, 0);
+        ui.add(strengthLabel,1,1);
+        ui.add(mapLabel,1,14);
 
         ui.add(pickUpItems,0,2);
         pickUpItems.setOnAction(click -> {
@@ -88,7 +96,15 @@ public class Main extends Application {
         quitGameButton.setOnAction(click -> {
             System.exit(0);
         });
-        ui.add(new Label("  "), 0, 12);
+        Button loadButton = new Button("Load Game");
+        ui.add(loadButton, 0, 20);
+        loadButton.setOnAction(mousedown -> {
+            showGetNameModalForGameLoad();
+            refresh();
+        });
+
+        loadButton.setFocusTraversable(false);
+        ui.add(new Label("Map:"), 0, 12);
         ui.add(new Label("  "), 0, 13);
         ui.add(new Label("  "), 0, 14);
         ui.add(new Label("  "), 0, 15);
@@ -133,25 +149,17 @@ public class Main extends Application {
             case UP:
                 map.getPlayer().move(0, -1);
                 refresh();
-                monstersMovement(map);
-                refresh();
                 break;
             case DOWN:
                 map.getPlayer().move(0, 1);
-                refresh();
-                monstersMovement(map);
                 refresh();
                 break;
             case LEFT:
                 map.getPlayer().move(-1, 0);
                 refresh();
-                monstersMovement(map);
-                refresh();
                 break;
             case RIGHT:
                 map.getPlayer().move(1,0);
-                refresh();
-                monstersMovement(map);
                 refresh();
                 break;
             case S:
@@ -159,10 +167,11 @@ public class Main extends Application {
                 showSaveModal();
                 break;
         }
+        map.repositionCenter();
+        monstersMovement(map);
         if (map.getPlayer().isDead()){
             System.exit(0);
         }
-        map.repositionCenter();
         changeMap();
     }
 
@@ -176,7 +185,10 @@ public class Main extends Application {
         Button cancelButton = new Button("Cancel");
         Button saveButton = new Button("Save");
         cancelButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (e) -> stage.close());
-        saveButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (e) -> stage.close());
+        saveButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (e) ->{
+                savePlayerInDb(saveButton, textField.getText());
+                stage.close();
+        });
         gridPane.setHgap(60);
         gridPane.setVgap(30);
         gridPane.add(saveGameName, 2, 2);
@@ -187,6 +199,34 @@ public class Main extends Application {
         stage.setHeight(300);
         stage.setScene(new Scene(gridPane));
         stage.show();
+    }
+
+    private void savePlayerInDb(Button saveButton, String name) {
+        Integer playerId = dbManager.getPlayerIdByNameManager(name);
+        System.out.println(playerId);
+        Player player = map.getPlayer();
+        player.setName(name);
+        System.out.println("player name: :" + player.getName());
+        if (playerId == null) {
+            dbManager.savePlayer(player);
+        } else {
+            confirmDialog(player);
+        }
+    }
+
+    private void confirmDialog(Player player) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirmation");
+        alert.setHeaderText("Name already exists");
+        alert.setContentText("Would you like to overwrite?");
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.get() == ButtonType.OK) {
+            dbManager.updatePlayer(player);
+            alert.close();
+        } else {
+            alert.close();
+        }
     }
 
 
@@ -206,6 +246,7 @@ public class Main extends Application {
     }
 
     private void refresh(){
+        map.repositionCenter();
         int minX = map.getCenterCell().getX() - CANVAS_SIZE/2;
         int minY = map.getCenterCell().getY() - CANVAS_SIZE/2;
         int maxX = map.getCenterCell().getX() + CANVAS_SIZE/2;
@@ -224,6 +265,7 @@ public class Main extends Application {
                 }
             }
             healthLabel.setText("" + map.getPlayer().getHealth());
+            mapLabel.setText("" + map.getPlayer().getOnMap());
             if (map.getPlayer().isDead()){
                 healthLabel.setText("DEAD");
             }
@@ -267,5 +309,57 @@ public class Main extends Application {
         }
         System.exit(0);
 
+    }
+    private void showGetNameModalForGameLoad() {
+        ArrayList<String> names = dbManager.getAllNames();
+        System.out.println("Names from db : " +names);
+
+        Stage stage = new Stage();
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.setTitle("Load Game");
+        Label loadGameName = new Label("Name:");
+        TextField textField = new TextField();
+        GridPane gridPane = new GridPane();
+        Button cancelButton = new Button("Cancel");
+        Button loadButton = new Button("Load Game");
+        cancelButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (e) -> stage.close());
+
+        loadButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (e) -> {
+            String chosenName = textField.getText();
+            loadGame(chosenName);
+            refresh();
+            System.out.println("Clicked the load button");
+            stage.close();
+        });
+        gridPane.setHgap(60);
+        gridPane.setVgap(30);
+        gridPane.add(loadGameName, 2, 2);
+        gridPane.add(textField, 3, 2);
+        gridPane.add(cancelButton, 4, 4);
+        gridPane.add(loadButton, 2, 4);
+        stage.setWidth(600);
+        stage.setHeight(300);
+        stage.setScene(new Scene(gridPane));
+        stage.show();
+    }
+    public void loadGame(String chosenName){
+        int currentMap = dbManager.getMapByPlayerName(chosenName);
+        map = MapLoader.loadMap(currentMap);
+
+        HashMap playerDictionary = dbManager.getPlayerByName(chosenName);
+        Player player = map.getPlayer();
+        player.setHealth((int) playerDictionary.get("hp"));
+        player.getCell().setX((int) playerDictionary.get("x"));
+        player.getCell().setY((int) playerDictionary.get("y"));
+        player.setStr((int) playerDictionary.get("attack_strength"));
+        player.setInventory(new ArrayList<Item>());
+        for (int i=0; i<(int) playerDictionary.get("sword"); i++) {
+            player.addToInventory(new Sword(new Cell(map, 0, 0, CellType.FLOOR)));
+        }
+        for (int i=0; i<(int) playerDictionary.get("key"); i++) {
+            player.addToInventory(new Key(new Cell(map, 0, 0, CellType.FLOOR)));
+        }
+        player.movePlayerToPosition(player.getCell().getX(), player.getCell().getY());
+        refresh();
     }
 }

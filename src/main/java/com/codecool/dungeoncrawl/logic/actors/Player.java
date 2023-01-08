@@ -12,8 +12,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Player extends Actor {
-    private ArrayList<Item> inventory;
+    private  String name;
 
+    private ArrayList<Item> inventory;
     private int onMap= 1;
 
     private boolean changeMap = false;
@@ -132,6 +133,12 @@ public class Player extends Actor {
             cell = nextCell;
         }
     }
+    public void movePlayerToPosition(int x, int y) {
+        Cell newCell = new Cell(this.getCell().getGameMap(), x, y, CellType.FLOOR);
+        newCell.setActor(this);
+        cell.setActor(null);
+        cell = newCell;
+    }
 
     public boolean getChangeMap() {
         return changeMap;
@@ -151,5 +158,13 @@ public class Player extends Actor {
 
     public void setInventory(ArrayList<Item> inventory) {
         this.inventory = inventory;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
