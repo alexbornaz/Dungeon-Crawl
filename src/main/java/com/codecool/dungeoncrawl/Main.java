@@ -18,30 +18,30 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 
 
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
+import javafx.scene.input.*;
 
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 
 import java.util.ArrayList;
 import java.sql.SQLException;
+import java.util.ConcurrentModificationException;
+import java.util.Optional;
 
 public class Main extends Application {
+    int CANVAS_SIZE = 20;
     GameMap map = MapLoader.loadMap(1);
 
     Canvas canvas = new Canvas(
-            map.getWidth() * Tiles.TILE_WIDTH,
-            map.getHeight() * Tiles.TILE_WIDTH);
+            CANVAS_SIZE * Tiles.TILE_WIDTH,
+            CANVAS_SIZE * Tiles.TILE_WIDTH);
     GraphicsContext context = canvas.getGraphicsContext2D();
     Label healthLabel = new Label();
 
@@ -75,7 +75,29 @@ public class Main extends Application {
         pickUpItems.setFocusTraversable(false);
         ui.add(new Label("Inventory-> "),0,3);
         ui.add(playerInventory,0,4);
-
+        Button restartButton = new Button("Restart Game");
+        Button quitGameButton = new Button("Quit Game");
+        restartButton.setOnAction(click -> {
+            map = MapLoader.loadMap(1);
+            map.getPlayer().setChangeMap(false);
+            map.getPlayer().setHealth(15);
+            map.getPlayer().setStr(3);
+            map.getPlayer().setInventory(new ArrayList<Item>());
+            refresh();
+        });
+        quitGameButton.setOnAction(click -> {
+            System.exit(0);
+        });
+        ui.add(new Label("  "), 0, 12);
+        ui.add(new Label("  "), 0, 13);
+        ui.add(new Label("  "), 0, 14);
+        ui.add(new Label("  "), 0, 15);
+        ui.add(new Label("  "), 0, 16);
+        ui.add(new Label("  "), 0, 17);
+        ui.add(restartButton, 0, 18);
+        ui.add(quitGameButton, 0, 19);
+        restartButton.setFocusTraversable(false);
+        quitGameButton.setFocusTraversable(false);
 
         BorderPane borderPane = new BorderPane();
 
@@ -110,73 +132,104 @@ public class Main extends Application {
         switch (keyEvent.getCode()) {
             case UP:
                 map.getPlayer().move(0, -1);
-
+                refresh();
                 monstersMovement(map);
                 refresh();
                 break;
             case DOWN:
                 map.getPlayer().move(0, 1);
-
+                refresh();
                 monstersMovement(map);
-
                 refresh();
                 break;
             case LEFT:
                 map.getPlayer().move(-1, 0);
+                refresh();
                 monstersMovement(map);
                 refresh();
                 break;
             case RIGHT:
                 map.getPlayer().move(1,0);
+                refresh();
                 monstersMovement(map);
                 refresh();
                 break;
             case S:
                 Player player = map.getPlayer();
-                dbManager.savePlayer(player);
+                showSaveModal();
                 break;
         }
         if (map.getPlayer().isDead()){
             System.exit(0);
         }
+        map.repositionCenter();
         changeMap();
     }
 
+    private void showSaveModal() {
+        Stage stage = new Stage();
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.setTitle("Save Game");
+        Label saveGameName = new Label("Name:");
+        TextField textField = new TextField();
+        GridPane gridPane = new GridPane();
+        Button cancelButton = new Button("Cancel");
+        Button saveButton = new Button("Save");
+        cancelButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (e) -> stage.close());
+        saveButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (e) -> stage.close());
+        gridPane.setHgap(60);
+        gridPane.setVgap(30);
+        gridPane.add(saveGameName, 2, 2);
+        gridPane.add(textField, 3, 2);
+        gridPane.add(cancelButton, 4, 4);
+        gridPane.add(saveButton, 2, 4);
+        stage.setWidth(600);
+        stage.setHeight(300);
+        stage.setScene(new Scene(gridPane));
+        stage.show();
+    }
+
+
     private void monstersMovement(GameMap map) {
+        try {
+            map.removeDeadMonsters();
+        } catch (ConcurrentModificationException e) {
+            System.out.println("No monsters on map.");
+        }
         for (Actor monster: map.getMonsters()){
             if (monster instanceof Ork){
                 ((Ork)monster).move();
             }else if (monster instanceof Nazgul){
                 ((Nazgul)monster).move();
             }
-                refresh();
-                break;
         }
     }
 
-    private void refresh() {
+    private void refresh(){
+        int minX = map.getCenterCell().getX() - CANVAS_SIZE/2;
+        int minY = map.getCenterCell().getY() - CANVAS_SIZE/2;
+        int maxX = map.getCenterCell().getX() + CANVAS_SIZE/2;
+        int maxY = map.getCenterCell().getY() + CANVAS_SIZE/2;
         context.setFill(Color.BLACK);
         context.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-        for (int x = 0; x < map.getWidth(); x++) {
-            for (int y = 0; y < map.getHeight(); y++) {
+        for (int x = minX; x < maxX; x++) {
+            for (int y = minY; y < maxY; y++) {
                 Cell cell = map.getCell(x, y);
                 if (cell.getActor() != null) {
-                    Tiles.drawTile(context, cell.getActor(), x, y);
-
+                    Tiles.drawTile(context, cell.getActor(), x-minX, y-minY);
                 } else if (cell.getItem() != null) {
-                    Tiles.drawTile(context, cell.getItem(), x, y);
-
+                    Tiles.drawTile(context, cell.getItem(), x-minX, y-minY);
                 } else {
-                    Tiles.drawTile(context, cell, x, y);
+                    Tiles.drawTile(context, cell, x-minX, y-minY);
                 }
             }
-
             healthLabel.setText("" + map.getPlayer().getHealth());
             if (map.getPlayer().isDead()){
                 healthLabel.setText("DEAD");
             }
             playerInventory.setText(""+map.getPlayer().showInventory());
         }
+
     }
     public void changeMap() {
         int previousHealth = map.getPlayer().getHealth();

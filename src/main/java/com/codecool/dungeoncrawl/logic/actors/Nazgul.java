@@ -18,21 +18,20 @@ public class Nazgul extends Actor{
             moveDirection = "right";
         }
         Cell nextCell;
-        while (true) {
-            if (moveDirection == "left"){
-                nextCell = this.getCell().getNeighbor(-2, 0);
-            }
-            else {
-                nextCell = this.getCell().getNeighbor(2, 0);
-            }
+        switch (moveDirection) {
+            case "left":
+                nextCell = this.getCell().getNeighbor(-1, 0);
+                break;
+            default:
+                nextCell = this.getCell().getNeighbor(1, 0);
+                break;
+        }
             if (nextCell.getActor() == null) {
                 this.getCell().setActor(null);
                 nextCell.setActor(this);
                 setCell(nextCell);
-                break;
             }
         }
-    }
 
     @Override
     public String getTileName() {
