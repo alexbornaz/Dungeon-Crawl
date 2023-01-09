@@ -1,11 +1,9 @@
 package com.codecool.dungeoncrawl.dao;
 
 import com.codecool.dungeoncrawl.model.GameState;
-import com.codecool.dungeoncrawl.model.PlayerModel;
 
 import javax.sql.DataSource;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
 public class GameStateDaoJdbc implements GameStateDao {
@@ -14,6 +12,7 @@ public class GameStateDaoJdbc implements GameStateDao {
     public GameStateDaoJdbc(DataSource dataSource) {
         this.dataSource = dataSource;
     }
+
     @Override
     public void add(GameState state) {
         try (Connection conn = dataSource.getConnection()) {
@@ -37,7 +36,7 @@ public class GameStateDaoJdbc implements GameStateDao {
         try (Connection conn = dataSource.getConnection()) {
             String sql = "UPDATE game_state SET current_map = ?, saved_at = ? WHERE player_id = ?";
             PreparedStatement statement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            statement.setInt(1, Integer.parseInt(state.getCurrentMap()));
+            statement.setString(1, state.getCurrentMap());
             statement.setDate(2, state.getSavedAt());
             statement.setInt(3, state.getPlayer().getId());
             statement.executeUpdate();
@@ -55,19 +54,20 @@ public class GameStateDaoJdbc implements GameStateDao {
     public List<GameState> getAll() {
         return null;
     }
-    public Integer getMapByPlayerId(Integer playerId) {
+
+    public String getMapByPlayerId(int playerId) {
         try (Connection conn = dataSource.getConnection()) {
             String sql = "SELECT current_map FROM game_state WHERE player_id = ?";
             PreparedStatement statement = conn.prepareStatement(sql);
             statement.setInt(1, playerId);
-            ResultSet resultSet = statement.executeQuery();
 
-            if (!resultSet.next()) {
-                return -1;
-            }
-            return resultSet.getInt(1);
+            ResultSet resultSet = statement.executeQuery();
+            resultSet.next();
+            String map = resultSet.getString(1);
+            return map;
         } catch (SQLException e) {
             throw new RuntimeException("Error while getMapByPlayerId", e);
         }
+
     }
 }

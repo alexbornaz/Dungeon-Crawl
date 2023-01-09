@@ -1,10 +1,8 @@
 package com.codecool.dungeoncrawl;
 
 
+import com.codecool.dungeoncrawl.logic.*;
 import com.codecool.dungeoncrawl.logic.Cell;
-import com.codecool.dungeoncrawl.logic.CellType;
-import com.codecool.dungeoncrawl.logic.GameMap;
-import com.codecool.dungeoncrawl.logic.MapLoader;
 import com.codecool.dungeoncrawl.logic.actors.Actor;
 import com.codecool.dungeoncrawl.logic.actors.Nazgul;
 import com.codecool.dungeoncrawl.logic.actors.Ork;
@@ -16,6 +14,8 @@ import com.codecool.dungeoncrawl.dao.GameDatabaseManager;
 import com.codecool.dungeoncrawl.logic.items.Key;
 import com.codecool.dungeoncrawl.logic.items.Sword;
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -42,6 +42,8 @@ import java.util.Optional;
 public class Main extends Application {
     int CANVAS_SIZE = 20;
     GameMap map = MapLoader.loadMap(1);
+    GameMap savedMap1 = map;
+    GameMap savedMap2 = MapLoader.loadMap(2);
 
     Canvas canvas = new Canvas(
             CANVAS_SIZE * Tiles.TILE_WIDTH,
@@ -71,6 +73,7 @@ public class Main extends Application {
         ui.setPadding(new Insets(10));
 
         ui.add(new Label("Health: "), 0, 0);
+        ui.add(new Label("Strength: "), 0,1);
         ui.add(healthLabel, 1, 0);
         ui.add(strengthLabel,1,1);
         ui.add(mapLabel,1,14);
@@ -104,7 +107,7 @@ public class Main extends Application {
         });
 
         loadButton.setFocusTraversable(false);
-        ui.add(new Label("Map:"), 0, 12);
+        ui.add(new Label("  "), 0, 12);
         ui.add(new Label("  "), 0, 13);
         ui.add(new Label("  "), 0, 14);
         ui.add(new Label("  "), 0, 15);
@@ -203,12 +206,10 @@ public class Main extends Application {
 
     private void savePlayerInDb(Button saveButton, String name) {
         Integer playerId = dbManager.getPlayerIdByNameManager(name);
-        System.out.println(playerId);
         Player player = map.getPlayer();
         player.setName(name);
-        System.out.println("player name: :" + player.getName());
         if (playerId == null) {
-            dbManager.savePlayer(player);
+            dbManager.savePlayer(player,MapSaver.saveMap(map));
         } else {
             confirmDialog(player);
         }
@@ -222,7 +223,7 @@ public class Main extends Application {
 
         Optional<ButtonType> result = alert.showAndWait();
         if (result.get() == ButtonType.OK) {
-            dbManager.updatePlayer(player);
+            dbManager.updatePlayer(player,MapSaver.saveMap(map));
             alert.close();
         } else {
             alert.close();
@@ -265,7 +266,7 @@ public class Main extends Application {
                 }
             }
             healthLabel.setText("" + map.getPlayer().getHealth());
-            mapLabel.setText("" + map.getPlayer().getOnMap());
+            strengthLabel.setText("" + map.getPlayer().getStr());
             if (map.getPlayer().isDead()){
                 healthLabel.setText("DEAD");
             }
@@ -276,13 +277,14 @@ public class Main extends Application {
     public void changeMap() {
         int previousHealth = map.getPlayer().getHealth();
         int previousAttackStrength = map.getPlayer().getStr();
-        ArrayList<Item> previousInventory = map.getPlayer().getInventory();
-
-        if (map.getPlayer().getChangeMap() == true && map.getPlayer().getOnMap() == 1) {
-            map = MapLoader.loadMap(2);
+        ArrayList previousInventory = map.getPlayer().getInventory();
+        if (map.getPlayer().getChangeMap() && map.getPlayer().getOnMap() == 1) {
+            savedMap1 = map;
+            map = savedMap2;
             map.getPlayer().setOnMap(2);
-        } else if (map.getPlayer().getChangeMap() == true && map.getPlayer().getOnMap() == 2) {
-            map = MapLoader.loadMap(1);
+        } else if (map.getPlayer().getChangeMap() && map.getPlayer().getOnMap() == 2) {
+            savedMap2 = map;
+            map = savedMap1;
             map.getPlayer().setOnMap(1);
         }
         map.getPlayer().setChangeMap(false);
@@ -312,12 +314,14 @@ public class Main extends Application {
     }
     private void showGetNameModalForGameLoad() {
         ArrayList<String> names = dbManager.getAllNames();
-        System.out.println("Names from db : " +names);
+        ListView<String> nameList = new ListView<String>();
+        ObservableList<String> items = FXCollections.observableArrayList (names);
+        nameList.setItems(items);
 
         Stage stage = new Stage();
         stage.initModality(Modality.WINDOW_MODAL);
         stage.setTitle("Load Game");
-        Label loadGameName = new Label("Name:");
+        Label loadGameName = new Label("Saves:");
         TextField textField = new TextField();
         GridPane gridPane = new GridPane();
         Button cancelButton = new Button("Cancel");
@@ -325,17 +329,16 @@ public class Main extends Application {
         cancelButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (e) -> stage.close());
 
         loadButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (e) -> {
-            String chosenName = textField.getText();
+            String chosenName = nameList.getSelectionModel().getSelectedItem();;
             loadGame(chosenName);
             refresh();
-            System.out.println("Clicked the load button");
             stage.close();
         });
         gridPane.setHgap(60);
         gridPane.setVgap(30);
         gridPane.add(loadGameName, 2, 2);
-        gridPane.add(textField, 3, 2);
-        gridPane.add(cancelButton, 4, 4);
+        gridPane.add(nameList, 3, 2);
+        gridPane.add(cancelButton, 3, 4);
         gridPane.add(loadButton, 2, 4);
         stage.setWidth(600);
         stage.setHeight(300);
@@ -343,7 +346,7 @@ public class Main extends Application {
         stage.show();
     }
     public void loadGame(String chosenName){
-        int currentMap = dbManager.getMapByPlayerName(chosenName);
+        String currentMap = dbManager.getMapByPlayerName(chosenName);
         map = MapLoader.loadMap(currentMap);
 
         HashMap playerDictionary = dbManager.getPlayerByName(chosenName);

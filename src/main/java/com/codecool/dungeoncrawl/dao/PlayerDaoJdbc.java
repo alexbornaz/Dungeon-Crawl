@@ -85,7 +85,7 @@ public class PlayerDaoJdbc implements PlayerDao {
             String sql = "SELECT player_name FROM player";
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             ArrayList<String> names = new ArrayList<>();
-            while (resultSet.next()) { // while result set pointer is positioned before or on last row read authors
+            while (resultSet.next()) {
                 names.add(resultSet.getString(1));
             }
             return names;

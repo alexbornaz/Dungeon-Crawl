@@ -8,10 +8,16 @@ import com.codecool.dungeoncrawl.logic.items.Key;
 import com.codecool.dungeoncrawl.logic.items.Sword;
 import com.codecool.dungeoncrawl.logic.items.door.ClosedDoor;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class MapLoader {
+    public static GameMap loadMap(String map){
+        InputStream mapStream = new ByteArrayInputStream(map.getBytes(StandardCharsets.UTF_8));
+        return readMap(mapStream);
+    }
     public static GameMap loadMap(int playerOnMap) {
         InputStream is;
         if (playerOnMap == 1) {
@@ -19,6 +25,10 @@ public class MapLoader {
         } else {
             is = MapLoader.class.getResourceAsStream("/map2.txt");
         }
+        return readMap(is);
+    }
+
+    private static GameMap readMap(InputStream is) {
         Scanner scanner = new Scanner(is);
         int width = scanner.nextInt();
         int height = scanner.nextInt();

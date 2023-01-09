@@ -1,5 +1,6 @@
 package com.codecool.dungeoncrawl.dao;
 
+import com.codecool.dungeoncrawl.logic.GameMap;
 import com.codecool.dungeoncrawl.logic.actors.Player;
 import com.codecool.dungeoncrawl.model.GameState;
 import com.codecool.dungeoncrawl.model.PlayerModel;
@@ -21,22 +22,22 @@ public class GameDatabaseManager {
         gameStateDao = new GameStateDaoJdbc(dataSource);
     }
 
-    public void savePlayer(Player player) {
+    public void savePlayer(Player player,String map) {
         PlayerModel model = new PlayerModel(player);
         playerDao.add(model);
         Timestamp ts=new Timestamp(System.currentTimeMillis());
         Date date=new Date(ts.getTime());
-        GameState gameState = new GameState(Integer.toString(player.getOnMap()), date, model);
+        GameState gameState = new GameState(map, date, model);
         gameStateDao.add(gameState);
     }
-    public void updatePlayer(Player player) {
+    public void updatePlayer(Player player, String map) {
         PlayerModel model = new PlayerModel(player);
         playerDao.update(model);
         Integer playerId = getPlayerIdByNameManager(player.getName());
         model.setId(playerId);
         Timestamp ts=new Timestamp(System.currentTimeMillis());
         Date date=new Date(ts.getTime());
-        GameState gameState = new GameState(Integer.toString(player.getOnMap()), date, model);
+        GameState gameState = new GameState(map, date, model);
         gameStateDao.update(gameState);
     }
     public Integer getPlayerIdByNameManager(String name) {
@@ -50,14 +51,12 @@ public class GameDatabaseManager {
     }
 
     public HashMap getPlayerByName(String name) {
-        HashMap playerDictionary = playerDao.getPlayerByName(name);
-        return playerDictionary;
+        return playerDao.getPlayerByName(name);
     }
 
-    public int getMapByPlayerName(String name) {
-        Integer playerId = playerDao.getPlayerIdByName(name);
-        Integer gameMap = gameStateDao.getMapByPlayerId(playerId);
-        return gameMap;
+    public String getMapByPlayerName(String name) {
+        int playerId = playerDao.getPlayerIdByName(name);
+        return gameStateDao.getMapByPlayerId(playerId);
     }
     private DataSource connect() throws SQLException {
         PGSimpleDataSource dataSource = new PGSimpleDataSource();
