@@ -7,12 +7,16 @@ import com.codecool.dungeoncrawl.logic.actors.Actor;
 import com.codecool.dungeoncrawl.logic.actors.Nazgul;
 import com.codecool.dungeoncrawl.logic.actors.Ork;
 import com.codecool.dungeoncrawl.logic.actors.Player;
+import com.codecool.dungeoncrawl.logic.import_Export.Export;
+import com.codecool.dungeoncrawl.logic.import_Export.Import;
 import com.codecool.dungeoncrawl.logic.items.Item;
 
 import com.codecool.dungeoncrawl.dao.GameDatabaseManager;
 
 import com.codecool.dungeoncrawl.logic.items.Key;
 import com.codecool.dungeoncrawl.logic.items.Sword;
+import com.codecool.dungeoncrawl.model.GameState;
+import com.codecool.dungeoncrawl.model.PlayerModel;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -33,6 +37,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.sql.SQLException;
 import java.util.ConcurrentModificationException;
@@ -107,6 +112,18 @@ public class Main extends Application {
         });
 
         loadButton.setFocusTraversable(false);
+        Button importButton = new Button("Import");
+        ui.add(importButton, 0, 22);
+        importButton.setOnAction(click -> {
+            importGamestate(primaryStage);
+        });
+        importButton.setFocusTraversable(false);
+        Button exportButton = new Button("Export");
+        ui.add(exportButton, 0, 23);
+        exportButton.setOnAction(click -> {
+            exportModal();
+        });
+        exportButton.setFocusTraversable(false);
         ui.add(new Label("  "), 0, 12);
         ui.add(new Label("  "), 0, 13);
         ui.add(new Label("  "), 0, 14);
@@ -133,6 +150,46 @@ public class Main extends Application {
 
         primaryStage.setTitle("Dungeon Crawl");
         primaryStage.show();
+    }
+
+    private void importGamestate(Stage stage){
+        GameState game = Import.importGame(stage);
+        if (game != null) {
+            String gameMapToLoad = game.getCurrentMap();
+            PlayerModel playerToLoad = game.getPlayer();
+            loadGame(gameMapToLoad,playerToLoad);
+        }
+    }
+
+    private void exportModal() {
+        Stage stage = new Stage();
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.setTitle("Export Game");
+        Label saveGameName = new Label("Name:");
+        TextField textField = new TextField();
+        GridPane gridPane = new GridPane();
+        Button cancelButton = new Button("Cancel");
+        Button saveButton = new Button("Export");
+        cancelButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (e) -> stage.close());
+        saveButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (e) ->{
+            GameState gameToExport = new GameState(MapSaver.saveMap(map),null,new PlayerModel(map.getPlayer()));
+            savePlayerInDb(saveButton,textField.getText());
+            try {
+                Export.exportGame(gameToExport,stage);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+        gridPane.setHgap(60);
+        gridPane.setVgap(30);
+        gridPane.add(saveGameName, 2, 2);
+        gridPane.add(textField, 3, 2);
+        gridPane.add(cancelButton, 4, 4);
+        gridPane.add(saveButton, 2, 4);
+        stage.setWidth(600);
+        stage.setHeight(300);
+        stage.setScene(new Scene(gridPane));
+        stage.show();
     }
 
 
@@ -365,4 +422,22 @@ public class Main extends Application {
         player.movePlayerToPosition(player.getCell().getX(), player.getCell().getY());
         refresh();
     }
+    public void loadGame(String gameMap,PlayerModel playertoImport){
+        map = MapLoader.loadMap(gameMap);
+        Player player = map.getPlayer();
+        player.setHealth( playertoImport.getHp());
+        player.getCell().setX( playertoImport.getX());
+        player.getCell().setY( playertoImport.getY());
+        player.setStr( playertoImport.getAttack_strength());
+        player.setInventory(new ArrayList<Item>());
+        for (int i=0; i<(int) playertoImport.getSword(); i++) {
+            player.addToInventory(new Sword(new Cell(map, 0, 0, CellType.FLOOR)));
+        }
+        for (int i=0; i<(int) playertoImport.getKey(); i++) {
+            player.addToInventory(new Key(new Cell(map, 0, 0, CellType.FLOOR)));
+        }
+        player.movePlayerToPosition(player.getCell().getX(), player.getCell().getY());
+        refresh();
+    }
+
 }

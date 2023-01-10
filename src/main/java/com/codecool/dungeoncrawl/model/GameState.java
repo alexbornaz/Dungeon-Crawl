@@ -1,5 +1,8 @@
 package com.codecool.dungeoncrawl.model;
 
+import com.codecool.dungeoncrawl.logic.GameMap;
+import org.apache.commons.lang3.SerializationUtils;
+
 import java.util.ArrayList;
 import java.sql.Date;
 import java.util.List;
@@ -27,6 +30,9 @@ public class GameState extends BaseModel {
     public String getCurrentMap() {
         return currentMap;
     }
+    public byte[] getByteMap(){
+        return currentMap.getBytes();
+    }
 
     public void setCurrentMap(String currentMap) {
         this.currentMap = currentMap;
@@ -46,5 +52,9 @@ public class GameState extends BaseModel {
 
     public void setPlayer(PlayerModel player) {
         this.player = player;
+    }
+
+    public String deSerialize(byte[] map) {
+        return SerializationUtils.deserialize(map);
     }
 }
