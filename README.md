@@ -123,7 +123,7 @@ None
 
 ## Samples
 
-- <img src="samples/image1.png"alt="screenshot of project" style="display: inline-block; margin: 0 auto; max-width: 300px">
-- <img src="samples/image2.png"alt="screenshot of project" style="display: inline-block; margin: 0 auto; max-width: 300px">
-- <img src="samples/image3.png"alt="screenshot of project" style="display: inline-block; margin: 0 auto; max-width: 300px">
-- <img src="samples/image4.png"alt="screenshot of project" style="display: inline-block; margin: 0 auto; max-width: 300px">
+- <img src="samples/image1.png" alt="screenshot of project" style="display: inline-block; margin: 0 auto; max-width: 300px">
+- <img src="samples/image2.png" alt="screenshot of project" style="display: inline-block; margin: 0 auto; max-width: 300px">
+- <img src="samples/image3.png" alt="screenshot of project" style="display: inline-block; margin: 0 auto; max-width: 300px">
+- <img src="samples/image4.png" alt="screenshot of project" style="display: inline-block; margin: 0 auto; max-width: 300px">
